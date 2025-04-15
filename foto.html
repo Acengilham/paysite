@@ -1,0 +1,1240 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fhotoboth - Photo Booth</title>
+    <style>
+        :root {
+            --primary: #3498db;
+            --secondary: #2980b9;
+            --danger: #e74c3c;
+            --dark: #2c3e50;
+            --light: #ecf0f1;
+            --success: #2ecc71;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: #1a1a1a;
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            overflow-x: hidden;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            padding: 20px;
+            text-align: center;
+            position: relative;
+        }
+
+        h1 {
+            margin-bottom: 20px;
+            font-size: 2.5rem;
+            color: var(--primary);
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .camera-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            margin-bottom: 20px;
+        }
+
+        .camera-box {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
+            border-radius: 15px;
+            overflow: hidden;
+            background: #000;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.5);
+            aspect-ratio: 16/9;
+        }
+
+        #videoElement {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transform: scaleX(-1);
+        }
+
+        .controls {
+            margin-top: 20px;
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+            width: 100%;
+            padding: 0 20px;
+        }
+
+        button {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+            font-size: 1rem;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--secondary);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.3);
+        }
+
+        .btn-secondary {
+            background: var(--dark);
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #34495e;
+            transform: translateY(-2px);
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #27ae60;
+            transform: translateY(-2px);
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #c0392b;
+            transform: translateY(-2px);
+        }
+
+        .error-message {
+            color: #e74c3c;
+            padding: 15px;
+            background: rgba(231, 76, 60, 0.1);
+            border-radius: 8px;
+            margin: 15px 0;
+            display: none;
+            max-width: 80%;
+        }
+
+        .preview-container {
+            display: none;
+            margin: 30px auto;
+            width: 100%;
+            max-width: 408px;
+            position: relative;
+            aspect-ratio: 3/4;
+            background: #000;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.5);
+        }
+
+        .countdown-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 8rem;
+            font-weight: bold;
+            color: white;
+            background: rgba(0, 0, 0, 0.7);
+            display: none;
+            z-index: 20;
+        }
+
+        .capture-indicator {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.9);
+            display: none;
+            z-index: 15;
+        }
+
+        .options {
+            margin: 20px 0;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            align-items: center;
+            width: 100%;
+        }
+
+        .options label {
+            font-size: 1.2rem;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .template-options {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+            width: 100%;
+            max-width: 800px;
+        }
+
+        .template-option {
+            width: 120px;
+            height: 180px;
+            border-radius: 10px;
+            cursor: pointer;
+            border: 3px solid transparent;
+            transition: all 0.3s;
+            overflow: hidden;
+            position: relative;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+
+        .template-option:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 15px rgba(0,0,0,0.4);
+        }
+
+        .template-option.selected {
+            border: 3px solid var(--primary);
+            box-shadow: 0 0 15px rgba(52, 152, 219, 0.8);
+            transform: scale(1.05);
+        }
+
+        .template-option img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .template-name {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(transparent, rgba(0, 0, 0, 0.8));
+            color: white;
+            font-size: 0.9rem;
+            padding: 8px;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        .watermark {
+            position: absolute;
+            bottom: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 1.2rem;
+            color: white;
+            opacity: 0.7;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+        }
+
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            .preview-container, .preview-container * {
+                visibility: visible;
+            }
+            .preview-container {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                height: 100%;
+                max-width: 100%;
+                border-radius: 0;
+                box-shadow: none;
+                margin: 0;
+            }
+            .watermark {
+                opacity: 1;
+                font-size: 1.5rem;
+            }
+        }
+
+        #qrCodeContainer {
+            margin: 20px auto;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .timer {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #ff6f61;
+            background: rgba(0,0,0,0.7);
+            padding: 10px 20px;
+            border-radius: 50px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            z-index: 100;
+            display: none;
+        }
+
+        .timer-message {
+            font-size: 0.8rem;
+            margin-top: 5px;
+            color: #ecf0f1;
+        }
+
+        .photo-counter {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 1rem;
+            font-weight: 600;
+            z-index: 10;
+            display: none;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+        }
+
+        .controls-overlay {
+            position: absolute;
+            bottom: 20px;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            z-index: 10;
+        }
+
+        .fullscreen-btn {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: rgba(0,0,0,0.5);
+            color: white;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 10;
+            transition: all 0.3s;
+        }
+
+        .fullscreen-btn:hover {
+            background: rgba(0,0,0,0.8);
+            transform: scale(1.1);
+        }
+
+        .action-buttons {
+            position: fixed;
+            top: 50%;
+            right: 20px;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            z-index: 90;
+            display: none;
+        }
+
+        .action-buttons button {
+            width: 150px;
+            justify-content: flex-start;
+        }
+
+        footer {
+            margin-top: 30px;
+            padding: 15px;
+            text-align: center;
+            color: var(--light);
+            font-size: 0.9rem;
+        }
+
+        footer a {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        footer a:hover {
+            text-decoration: underline;
+        }
+
+        /* Fullscreen styles */
+        :fullscreen .camera-box {
+            max-width: 100%;
+            border-radius: 0;
+            height: 100vh;
+        }
+
+        :fullscreen .controls-overlay {
+            bottom: 40px;
+        }
+
+        :fullscreen .photo-counter {
+            top: 30px;
+            left: 30px;
+            font-size: 1.2rem;
+        }
+
+        /* Preview modal styles */
+        .preview-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.9);
+            z-index: 100;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .preview-content {
+            background: #2c3e50;
+            border-radius: 15px;
+            padding: 30px;
+            max-width: 600px;
+            width: 90%;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        .preview-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .preview-item {
+            position: relative;
+            border-radius: 8px;
+            overflow: hidden;
+            aspect-ratio: 1/1;
+            background: #333;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+
+        .preview-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .preview-item .retake-btn {
+            position: absolute;
+            bottom: 5px;
+            right: 5px;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            border: none;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 10;
+            transition: all 0.3s;
+        }
+
+        .preview-item .retake-btn:hover {
+            background: var(--danger);
+            transform: scale(1.1);
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .template-option {
+                width: 100px;
+                height: 150px;
+            }
+            
+            .camera-box {
+                border-radius: 10px;
+            }
+            
+            button {
+                padding: 10px 20px;
+                font-size: 0.9rem;
+            }
+
+            .preview-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .action-buttons {
+                right: 10px;
+            }
+
+            .action-buttons button {
+                width: 120px;
+                padding: 10px 15px;
+                font-size: 0.9rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .template-option {
+                width: 80px;
+                height: 120px;
+            }
+            
+            .controls {
+                gap: 10px;
+            }
+            
+            .countdown-overlay {
+                font-size: 6rem;
+            }
+
+            .preview-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .action-buttons {
+                position: static;
+                transform: none;
+                flex-direction: row;
+                justify-content: center;
+                margin-top: 20px;
+                width: 100%;
+            }
+
+            .action-buttons button {
+                width: auto;
+            }
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+    <script src="https://cdn.rawgit.com/davidshimjs/qrcodejs/gh-pages/qrcode.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <h1><i class="fas fa-camera-retro"></i> Fhotoboth</h1>
+        <div class="error-message" id="errorMessage"></div>
+        <div class="timer" id="timer">
+            <div>30</div>
+            <div class="timer-message">Tab akan tertutup otomatis...</div>
+        </div>
+
+        <div class="options" id="options">
+            <label>Pilih Template Foto:</label>
+            <div class="template-options" id="templateOptions">
+                <!-- Templates will be added by JavaScript -->
+            </div>
+            <button class="btn-primary" id="startBtn">
+                <i class="fas fa-video"></i> Mulai Foto
+            </button>
+        </div>
+
+        <div class="camera-section" id="cameraSection" style="display: none;">
+            <div class="camera-box">
+                <div class="photo-counter" id="photoCounter">1/6</div>
+                <button class="fullscreen-btn" id="fullscreenBtn" onclick="toggleFullscreen()">
+                    <i class="fas fa-expand"></i>
+                </button>
+                <div class="capture-indicator" id="captureIndicator"></div>
+                <video id="videoElement" autoplay playsinline></video>
+                <div class="countdown-overlay" id="countdownOverlay"></div>
+                
+                <div class="controls-overlay">
+                    <button class="btn-primary" id="captureBtn" onclick="startMultiCapture()">
+                        <i class="fas fa-camera"></i> Ambil Foto
+                    </button>
+                    <button class="btn-danger" id="cancelBtn" onclick="cancelSession()">
+                        <i class="fas fa-times"></i> Batal
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Preview Modal -->
+        <div class="preview-modal" id="previewModal">
+            <div class="preview-content">
+                <h3>Hasil Foto</h3>
+                <p>Jika ingin mengulang foto, silahkan klik tanda <i class="fas fa-redo"></i> pada foto yang ingin diulang</p>
+                <p><small>Anda harus menunggu sesi foto selesai sebelum bisa mengulang foto</small></p>
+                <div class="preview-grid" id="previewGrid"></div>
+                <div class="controls">
+                    <button class="btn-success" id="continueBtn" onclick="continueToCollage()">
+                        <i class="fas fa-check"></i> Lanjutkan
+                    </button>
+                    <button class="btn-danger" id="retakeAllBtn" onclick="retakeAllPhotos()">
+                        <i class="fas fa-redo"></i> Ulangi Semua
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Final collage section -->
+        <div class="preview-container" id="previewContainer">
+            <canvas id="collageCanvas"></canvas>
+            <div class="watermark">FOTOINDONG</div>
+        </div>
+
+        <!-- Action buttons (right side) -->
+        <div class="action-buttons" id="actionButtons">
+            <button class="btn-primary" id="downloadBtn" onclick="downloadCollage()">
+                <i class="fas fa-download"></i> Download
+            </button>
+            <button class="btn-primary" id="printBtn" onclick="printCollage()">
+                <i class="fas fa-print"></i> Print
+            </button>
+            <button class="btn-primary" id="shareBtn" onclick="shareCollage()">
+                <i class="fas fa-share-alt"></i> Share
+            </button>
+            <button class="btn-secondary" id="restartBtn" onclick="restartSession()">
+                <i class="fas fa-redo"></i> Mulai Lagi
+            </button>
+        </div>
+
+        <footer>
+            <a href="https://www.instagram.com/ilhamnrllh_" target="_blank">
+                <i class="fab fa-instagram"></i> FOTOINDONG by Acengilhmnrllh
+            </a>
+        </footer>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        // Template data dengan 6 foto (3 kiri, 3 kanan) - Updated with HD templates
+        const templates = {
+            template1: {
+                id: "template1",
+                name: "REDO 1",
+                imageUrl: "https://i.imgur.com/702hSAQ.png",
+                layout: [
+                    { x: 10, y: 10, width: 190, height: 190 },
+                    { x: 10, y: 120, width: 190, height: 190 },
+                    { x: 10, y: 230, width: 190, height: 190 },
+                    { x: 210, y: 10, width: 190, height: 190 },
+                    { x: 210, y: 120, width: 190, height: 190 },
+                    { x: 210, y: 230, width: 190, height: 190 }
+                ],
+                background: "#3498db"
+            },
+            template2: {
+                id: "template2",
+                name: "REDO 2",
+                imageUrl: "https://i.imgur.com/LmDW2v1.png",
+                layout: [
+                    { x: 10, y: 10, width: 190, height: 190 },
+                    { x: 10, y: 120, width: 190, height: 190 },
+                    { x: 10, y: 230, width: 190, height: 190 },
+                    { x: 210, y: 10, width: 190, height: 190 },
+                    { x: 210, y: 120, width: 190, height: 190 },
+                    { x: 210, y: 230, width: 190, height: 190 }
+                ],
+                background: "#e74c3c"
+            },
+            template3: {
+                id: "template3",
+                name: "REDO 3",
+                imageUrl: "https://i.imgur.com/fpMSozs.png",
+                layout: [
+                    { x: 10, y: 10, width: 190, height: 190 },
+                    { x: 10, y: 120, width: 190, height: 190 },
+                    { x: 10, y: 230, width: 190, height: 190 },
+                    { x: 210, y: 10, width: 190, height: 190 },
+                    { x: 210, y: 120, width: 190, height: 190 },
+                    { x: 210, y: 230, width: 190, height: 190 }
+                ],
+                background: "#2ecc71"
+            },
+            template4: {
+                id: "template4",
+                name: "REDO 4",
+                imageUrl: "https://i.imgur.com/BrFiSoO.png",
+                layout: [
+                    { x: 10, y: 10, width: 190, height: 190 },
+                    { x: 10, y: 120, width: 190, height: 190 },
+                    { x: 10, y: 230, width: 190, height: 190 },
+                    { x: 210, y: 10, width: 190, height: 190 },
+                    { x: 210, y: 120, width: 190, height: 190 },
+                    { x: 210, y: 230, width: 190, height: 190 }
+                ],
+                background: "#9b59b6"
+            }
+        };
+
+        let mediaStream = null;
+        let capturedPhotos = [];
+        let selectedTemplate = null;
+        let shareUrl = null;
+        let currentPhoto = 0;
+        const totalPhotos = 6;
+        const captureDelay = 2000; // 2 detik jeda antar foto
+
+        // Initialize the app
+        function initApp() {
+            renderTemplates();
+            selectTemplate('template1');
+            
+            // Add event listener to start button
+            document.getElementById('startBtn').addEventListener('click', showTutorial);
+        }
+
+        // Show tutorial when start button clicked
+        function showTutorial() {
+            if (!selectedTemplate) {
+                showError('Silakan pilih template terlebih dahulu!');
+                return;
+            }
+
+            Swal.fire({
+                title: 'Cara Menggunakan Fhotoboth',
+                html: `
+                    <div style="text-align: left; font-size: 0.9rem;">
+                        <p><strong>1. Pilih Template</strong><br>Pilih template foto yang Anda sukai</p>
+                        <p><strong>2. Ambil Foto</strong><br>Klik tombol "Ambil Foto" untuk memulai sesi foto</p>
+                        <p><strong>3. Hitung Mundur</strong><br>Akan ada hitung mundur sebelum setiap foto diambil</p>
+                        <p><strong>4. Hasil Foto</strong><br>Setelah semua foto diambil, Anda bisa melihat hasilnya</p>
+                        <p><strong>5. Ulangi Foto</strong><br>Jika ingin mengulang foto, tunggu sesi selesai lalu klik tanda 🔄</p>
+                        <p><strong>6. Download/Share</strong><br>Setelah puas dengan hasil, Anda bisa download atau share foto</p>
+                    </div>
+                `,
+                confirmButtonText: 'Saya Mengerti',
+                confirmButtonColor: '#3498db',
+                width: '500px',
+                padding: '1.5em',
+                background: '#2c3e50',
+                color: 'white',
+                backdrop: `
+                    rgba(0,0,0,0.7)
+                `
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    startCamera();
+                }
+            });
+        }
+
+        // Render template options
+        function renderTemplates() {
+            const templateOptions = document.getElementById('templateOptions');
+            templateOptions.innerHTML = '';
+            
+            Object.values(templates).forEach(template => {
+                const templateDiv = document.createElement('div');
+                templateDiv.className = 'template-option';
+                templateDiv.onclick = () => selectTemplate(template.id);
+                
+                templateDiv.innerHTML = `
+                    <img src="${template.imageUrl}" alt="${template.name}">
+                    <div class="template-name">${template.name}</div>
+                `;
+                
+                templateOptions.appendChild(templateDiv);
+            });
+        }
+
+        // Fungsi untuk memilih template
+        function selectTemplate(templateId) {
+            selectedTemplate = templates[templateId];
+            document.querySelectorAll('.template-option').forEach(div => {
+                div.classList.remove('selected');
+            });
+            
+            const selectedDiv = Array.from(document.querySelectorAll('.template-option'))
+                .find(div => div.querySelector('.template-name').textContent === selectedTemplate.name);
+            
+            if (selectedDiv) {
+                selectedDiv.classList.add('selected');
+            }
+        }
+
+        // Toggle fullscreen mode
+        function toggleFullscreen() {
+            const cameraBox = document.querySelector('.camera-box');
+            
+            if (!document.fullscreenElement) {
+                cameraBox.requestFullscreen().catch(err => {
+                    showError(`Gagal membuka fullscreen: ${err.message}`);
+                });
+            } else {
+                document.exitFullscreen();
+            }
+        }
+
+        // Mulai kamera setelah memilih template
+        async function startCamera() {
+            try {
+                document.getElementById('options').style.display = 'none';
+                document.getElementById('cameraSection').style.display = 'flex';
+                
+                const stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { 
+                        width: { ideal: 1920 },
+                        height: { ideal: 1080 },
+                        facingMode: "user" 
+                    } 
+                });
+                stopCamera();
+                
+                document.getElementById('photoCounter').style.display = 'block';
+                
+                const video = document.getElementById('videoElement');
+                video.srcObject = stream;
+                mediaStream = stream;
+                
+            } catch (error) {
+                showError('Gagal mengakses kamera: ' + error.message);
+                document.getElementById('options').style.display = 'flex';
+                document.getElementById('cameraSection').style.display = 'none';
+            }
+        }
+
+        function startMultiCapture() {
+            capturedPhotos = [];
+            currentPhoto = 0;
+            document.getElementById('photoCounter').textContent = `1/${totalPhotos}`;
+            captureNextPhoto();
+        }
+
+        function captureNextPhoto() {
+            if (currentPhoto < totalPhotos) {
+                currentPhoto++;
+                document.getElementById('photoCounter').textContent = `${currentPhoto}/${totalPhotos}`;
+                
+                // Tampilkan countdown
+                startCountdown(() => {
+                    // Setelah countdown, ambil foto
+                    capturePhoto();
+                    
+                    // Tampilkan indikator foto terambil
+                    showCaptureIndicator();
+                    
+                    // Jeda sebelum foto berikutnya
+                    if (currentPhoto < totalPhotos) {
+                        setTimeout(captureNextPhoto, captureDelay);
+                    } else {
+                        // Selesai mengambil semua foto
+                        showPhotoPreviews();
+                    }
+                });
+            }
+        }
+
+        function showCaptureIndicator() {
+            const indicator = document.getElementById('captureIndicator');
+            indicator.style.display = 'block';
+            setTimeout(() => {
+                indicator.style.display = 'none';
+            }, 300);
+        }
+
+        function startCountdown(callback) {
+            let count = 3;
+            const overlay = document.getElementById('countdownOverlay');
+            overlay.style.display = 'flex';
+            
+            const interval = setInterval(() => {
+                overlay.textContent = count;
+                if (count-- <= 0) {
+                    clearInterval(interval);
+                    overlay.style.display = 'none';
+                    callback();
+                }
+            }, 1000);
+        }
+
+        function capturePhoto() {
+            const video = document.getElementById('videoElement');
+            const canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            
+            const ctx = canvas.getContext('2d');
+            ctx.translate(canvas.width, 0);
+            ctx.scale(-1, 1);
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            
+            capturedPhotos.push(canvas.toDataURL('image/jpeg', 0.9)); // Higher quality
+        }
+
+        // Show photo previews in modal with retake options
+        function showPhotoPreviews() {
+            const previewGrid = document.getElementById('previewGrid');
+            previewGrid.innerHTML = '';
+            
+            capturedPhotos.forEach((photo, index) => {
+                const previewItem = document.createElement('div');
+                previewItem.className = 'preview-item';
+                
+                previewItem.innerHTML = `
+                    <img src="${photo}" alt="Foto ${index + 1}">
+                    <button class="retake-btn" onclick="retakePhoto(${index})">
+                        <i class="fas fa-redo"></i>
+                    </button>
+                `;
+                
+                previewGrid.appendChild(previewItem);
+            });
+            
+            // Hide camera and show preview modal
+            document.getElementById('cameraSection').style.display = 'none';
+            document.getElementById('previewModal').style.display = 'flex';
+        }
+
+        // Retake a specific photo
+        function retakePhoto(index) {
+            // Hide preview modal temporarily
+            document.getElementById('previewModal').style.display = 'none';
+            
+            // Show camera controls
+            document.getElementById('cameraSection').style.display = 'flex';
+            document.getElementById('photoCounter').style.display = 'block';
+            document.getElementById('photoCounter').textContent = `${index + 1}/${totalPhotos}`;
+            
+            // Set current photo to the one being retaken
+            currentPhoto = index;
+            
+            // Start countdown for retake
+            startCountdown(() => {
+                capturePhotoForRetake(index);
+            });
+        }
+
+        function capturePhotoForRetake(index) {
+            const video = document.getElementById('videoElement');
+            const canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            
+            const ctx = canvas.getContext('2d');
+            ctx.translate(canvas.width, 0);
+            ctx.scale(-1, 1);
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            
+            // Replace the photo at the specified index
+            capturedPhotos[index] = canvas.toDataURL('image/jpeg', 0.9); // Higher quality
+            
+            // Show capture indicator
+            showCaptureIndicator();
+            
+            // Show previews again
+            setTimeout(() => {
+                showPhotoPreviews();
+            }, 500);
+        }
+
+        // Retake all photos
+        function retakeAllPhotos() {
+            document.getElementById('previewModal').style.display = 'none';
+            startMultiCapture();
+        }
+
+        // Continue to create collage
+        function continueToCollage() {
+            document.getElementById('previewModal').style.display = 'none';
+            createCollage();
+            startTimer();
+        }
+
+        function createCollage() {
+            const collageCanvas = document.getElementById('collageCanvas');
+            const collageCtx = collageCanvas.getContext('2d');
+            
+            // Set ukuran canvas portrait 4R (408x612)
+            collageCanvas.width = 408;
+            collageCanvas.height = 612;
+            
+            // Draw background
+            collageCtx.fillStyle = selectedTemplate.background;
+            collageCtx.fillRect(0, 0, collageCanvas.width, collageCanvas.height);
+            
+            // Draw template image if available
+            if (selectedTemplate.imageUrl) {
+                const templateImg = new Image();
+                templateImg.crossOrigin = "Anonymous";
+                templateImg.src = selectedTemplate.imageUrl;
+                templateImg.onload = () => {
+                    collageCtx.drawImage(templateImg, 0, 0, collageCanvas.width, collageCanvas.height);
+                    drawPhotosOnCollage();
+                };
+                templateImg.onerror = () => {
+                    console.error('Gagal memuat gambar template');
+                    drawPhotosOnCollage();
+                };
+            } else {
+                drawPhotosOnCollage();
+            }
+            
+            function drawPhotosOnCollage() {
+                let photosLoaded = 0;
+                
+                capturedPhotos.forEach((photo, index) => {
+                    if (index >= selectedTemplate.layout.length) return;
+                    
+                    const layout = selectedTemplate.layout[index];
+                    const img = new Image();
+                    img.src = photo;
+                    img.onload = () => {
+                        // Crop foto landscape ke portrait
+                        const sourceWidth = img.width;
+                        const sourceHeight = img.height;
+                        const sourceX = 0;
+                        const sourceY = (sourceHeight - (sourceWidth * layout.height / layout.width)) / 2;
+                        const cropHeight = sourceWidth * layout.height / layout.width;
+
+                        collageCtx.drawImage(
+                            img,
+                            sourceX, sourceY, sourceWidth, cropHeight,
+                            layout.x, layout.y, layout.width, layout.height
+                        );
+                        
+                        photosLoaded++;
+                        
+                        if (photosLoaded === Math.min(capturedPhotos.length, selectedTemplate.layout.length)) {
+                            showFinalCollage();
+                            autoUploadToImgBB(); // Auto upload setelah selesai
+                        }
+                    };
+                });
+            }
+            
+            function showFinalCollage() {
+                document.getElementById('previewContainer').style.display = 'block';
+                document.getElementById('actionButtons').style.display = 'flex';
+                stopCamera();
+            }
+        }
+
+        // Fungsi untuk auto upload ke ImgBB
+        async function autoUploadToImgBB() {
+            const swalInstance = Swal.fire({
+                title: 'Mengunggah...',
+                text: 'Sedang mengunggah foto ke server. Harap tunggu.',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+
+            try {
+                const canvas = document.getElementById('collageCanvas');
+                canvas.toBlob(async (blob) => {
+                    try {
+                        const formData = new FormData();
+                        formData.append('image', blob, 'collage.jpg');
+
+                        const response = await fetch('https://api.imgbb.com/1/upload?key=bd592992198cf5d0a6fbbc380b83f88d', {
+                            method: 'POST',
+                            body: formData
+                        });
+
+                        const result = await response.json();
+
+                        if (result.success) {
+                            // Format URL sesuai permintaan: https://ibb.co.com/xxxxxx
+                            const imgCode = result.data.id;
+                            shareUrl = `https://ibb.co.com/${imgCode}`;
+                            swalInstance.close();
+                        } else {
+                            throw new Error(result.error?.message || 'Gagal mengunggah ke imgBB');
+                        }
+                    } catch (error) {
+                        console.error('Upload error:', error);
+                        swalInstance.close();
+                        showError('Upload gagal: ' + error.message);
+                    }
+                }, 'image/jpeg', 0.95); // Higher quality for upload
+            } catch (error) {
+                console.error('Error:', error);
+                swalInstance.close();
+                showError('Terjadi kesalahan: ' + error.message);
+            }
+        }
+
+        function downloadCollage() {
+            const link = document.createElement('a');
+            link.download = 'fhotoboth-' + selectedTemplate.name.toLowerCase().replace(' ', '-') + '-' + Date.now() + '.jpg';
+            link.href = document.getElementById('collageCanvas').toDataURL('image/jpeg', 0.95); // Higher quality for download
+            link.click();
+        }
+
+        function printCollage() {
+            const canvas = document.getElementById('collageCanvas');
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.95); // High quality for print
+            
+            // Create a temporary image for printing
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Print Foto</title>
+                    <style>
+                        body { margin: 0; padding: 0; }
+                        img { 
+                            width: 100%; 
+                            height: 100%; 
+                            object-fit: contain; 
+                            display: block;
+                        }
+                        @page { 
+                            size: 4R; 
+                            margin: 0; 
+                        }
+                    </style>
+                </head>
+                <body>
+                    <img src="${dataUrl}" onload="window.print();window.close()">
+                </body>
+                </html>
+            `);
+            printWindow.document.close();
+        }
+
+        function shareCollage() {
+            if (!shareUrl) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Belum diupload',
+                    text: 'Foto belum selesai diupload, harap tunggu sebentar',
+                    confirmButtonColor: '#3498db',
+                });
+                return;
+            }
+
+            Swal.fire({
+                title: 'Share Foto',
+                html: `
+                    <p>Gunakan link berikut untuk berbagi:</p>
+                    <div id="qrCodeContainer" style="margin: 20px auto;"></div>
+                    <p>
+                        <a href="${shareUrl}" target="_blank" style="color: #3498db; word-break: break-all;">
+                            ${shareUrl}
+                        </a>
+                    </p>
+                `,
+                confirmButtonText: 'Tutup',
+                didOpen: () => {
+                    new QRCode(document.getElementById('qrCodeContainer'), {
+                        text: shareUrl,
+                        width: 200,
+                        height: 200,
+                        colorDark: "#000000",
+                        colorLight: "#ffffff",
+                        correctLevel: QRCode.CorrectLevel.H
+                    });
+                }
+            });
+        }
+
+        function startTimer() {
+            let timeLeft = 30;
+            const timerElement = document.getElementById('timer');
+            timerElement.style.display = 'block';
+
+            const timerInterval = setInterval(() => {
+                timerElement.querySelector('div').textContent = timeLeft;
+                timeLeft--;
+
+                if (timeLeft < 0) {
+                    clearInterval(timerInterval);
+                    window.location.href = 'https://acengilham.github.io/paysite/';
+                }
+            }, 1000);
+        }
+
+        function stopCamera() {
+            if (mediaStream) {
+                mediaStream.getTracks().forEach(track => {
+                    track.stop();
+                });
+                mediaStream = null;
+            }
+        }
+
+        function cancelSession() {
+            stopCamera();
+            document.getElementById('videoElement').srcObject = null;
+            document.getElementById('cameraSection').style.display = 'none';
+            document.getElementById('options').style.display = 'flex';
+        }
+
+        function restartSession() {
+            document.getElementById('previewContainer').style.display = 'none';
+            document.getElementById('actionButtons').style.display = 'none';
+            document.getElementById('timer').style.display = 'none';
+            document.getElementById('options').style.display = 'flex';
+        }
+
+        function showError(message) {
+            const errorElement = document.getElementById('errorMessage');
+            errorElement.textContent = message;
+            errorElement.style.display = 'block';
+            setTimeout(() => errorElement.style.display = 'none', 5000);
+        }
+
+        // Event listeners
+        window.addEventListener('beforeunload', stopCamera);
+        document.addEventListener('DOMContentLoaded', initApp);
+        
+        // Handle fullscreen change
+        document.addEventListener('fullscreenchange', () => {
+            const fullscreenBtn = document.getElementById('fullscreenBtn');
+            if (document.fullscreenElement) {
+                fullscreenBtn.innerHTML = '<i class="fas fa-compress"></i>';
+            } else {
+                fullscreenBtn.innerHTML = '<i class="fas fa-expand"></i>';
+            }
+        });
+    </script>
+</body>
+</html>
